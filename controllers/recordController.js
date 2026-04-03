@@ -1,32 +1,72 @@
 const Record = require("../models/Record");
 
-// CREATE RECORD (Admin only)
+
+// 🔹 CREATE RECORD (Admin only)
 exports.createRecord = async (req, res) => {
   try {
     const record = new Record(req.body);
     await record.save();
-    res.status(201).json(record);
+
+    res.status(201).json({
+      message: "Record created successfully",
+      data: record
+    });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// ✅ BASIC GET (All users - NO filters)
+
+// 🔹 GET ALL RECORDS (Viewer + Analyst + Admin) with Pagination
 exports.getAllRecords = async (req, res) => {
   try {
-    const records = await Record.find().sort({ date: -1 });
-    res.json(records);
+    let { page = 1, limit = 5 } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const filter = { isDeleted: false }; // ✅ IMPORTANT
+
+    const records = await Record.find(filter)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ date: -1 });
+
+    const total = await Record.countDocuments(filter);
+
+    res.json({
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      data: records
+    });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// ✅ FILTERED GET (Analyst + Admin only)
+
+// 🔹 FILTERED RECORDS (Admin + Analyst only)
 exports.getFilteredRecords = async (req, res) => {
   try {
-    const { type, category, startDate, endDate } = req.query;
+    let {
+      page = 1,
+      limit = 5,
+      type,
+      category,
+      startDate,
+      endDate,
+      sort = "desc"
+    } = req.query;
 
-    let filter = {};
+    // Convert to numbers
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    // Base filter (soft delete)
+    let filter = { isDeleted: false };
 
     if (type) filter.type = type;
     if (category) filter.category = category;
@@ -38,34 +78,118 @@ exports.getFilteredRecords = async (req, res) => {
       };
     }
 
-    const records = await Record.find(filter).sort({ date: -1 });
+    // Sorting
+    const sortOption = sort === "asc" ? 1 : -1;
 
-    res.json(records);
+    const records = await Record.find(filter)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ date: sortOption });
+
+    const total = await Record.countDocuments(filter);
+
+    res.json({
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      data: records
+    });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// UPDATE RECORD (Admin only)
+// 🔹 SEARCH RECORDS (Admin + Analyst only)
+exports.searchRecords = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const records = await Record.find({
+      isDeleted: false,
+      $or: [
+        { category: { $regex: query, $options: "i" } },
+        { notes: { $regex: query, $options: "i" } }
+      ]
+    }).sort({ date: -1 });
+
+    res.json({
+      count: records.length,
+      data: records
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+// 🔹 UPDATE RECORD (Admin only)
 exports.updateRecord = async (req, res) => {
   try {
-    const record = await Record.findByIdAndUpdate(
-      req.params.id,
+    const record = await Record.findOneAndUpdate(
+      { _id: req.params.id, isDeleted: false }, // ✅ prevent updating deleted
       req.body,
       { new: true }
     );
 
-    res.json(record);
+    if (!record) {
+      return res.status(404).json({ message: "Record not found or deleted" });
+    }
+
+    res.json({
+      message: "Record updated successfully",
+      data: record
+    });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// DELETE RECORD (Admin only)
+
+// 🔹 SOFT DELETE RECORD (Admin only)
 exports.deleteRecord = async (req, res) => {
   try {
-    await Record.findByIdAndDelete(req.params.id);
-    res.json({ message: "Record deleted" });
+    const record = await Record.findById(req.params.id);
+
+    if (!record || record.isDeleted) {
+      return res.status(404).json({ message: "Record not found" });
+    }
+
+    record.isDeleted = true;
+    record.deletedAt = new Date();
+
+    await record.save();
+
+    res.json({ message: "Record soft deleted" });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+// 🔹 RESTORE RECORD (Optional 🔥)
+exports.restoreRecord = async (req, res) => {
+  try {
+    const record = await Record.findById(req.params.id);
+
+    if (!record || !record.isDeleted) {
+      return res.status(404).json({ message: "Record not found or not deleted" });
+    }
+
+    record.isDeleted = false;
+    record.deletedAt = null;
+
+    await record.save();
+
+    res.json({ message: "Record restored successfully" });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
