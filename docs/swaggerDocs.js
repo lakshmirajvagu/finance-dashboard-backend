@@ -1,3 +1,4 @@
+
 /**
  * @swagger
  * tags:
@@ -74,13 +75,24 @@
  * @swagger
  * /api/records:
  *   get:
- *     summary: Get all records (pagination supported)
+ *     summary: Get all records with pagination (Every role)
  *     tags: [Records]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 5
  *     responses:
  *       200:
- *         description: List of records
+ *         description: Success
  */
 
 
@@ -88,24 +100,41 @@
  * @swagger
  * /api/records:
  *   post:
- *     summary: Create a new record (Admin only)
+ *     summary: Create record (Admin only)
  *     tags: [Records]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amount, type, category]
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 example: 5000
+ *               type:
+ *                 type: string
+ *                 example: income
+ *               category:
+ *                 type: string
+ *                 example: salary
+ *               notes:
+ *                 type: string
+ *                 example: Monthly salary
  *     responses:
  *       201:
- *         description: Record created
+ *         description: Created
  */
-
 
 /**
  * @swagger
  * /api/records/filter:
  *   get:
- *     summary: Filter records with pagination and sorting (Admin & Analyst)
+ *     summary: Filter records by type, category, or date range  (Every role )
  *     tags: [Records]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: type
@@ -118,6 +147,16 @@
  *           type: string
  *         example: salary
  *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *         example: 2025-01-01
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *         example: 2025-12-31
+ *       - in: query
  *         name: page
  *         schema:
  *           type: integer
@@ -127,23 +166,9 @@
  *         schema:
  *           type: integer
  *         example: 5
- */
-
-
-/**
- * @swagger
- * /api/records/search:
- *   get:
- *     summary: Search records (Admin & Analyst)
- *     tags: [Records]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: query
- *         schema:
- *           type: string
- *         example: salary
+ *     responses:
+ *       200:
+ *         description: Filtered records fetched successfully
  */
 
 
@@ -153,14 +178,67 @@
  *   put:
  *     summary: Update record (Admin only)
  *     tags: [Records]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *         example: 69d0f508335151f276d2ce1b
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 example: 6000
+ *               category:
+ *                 type: string
+ *                 example: updated salary
+ *     responses:
+ *       200:
+ *         description: Record updated successfully
+ */
+
+
+/**
+ * @swagger
+ * /api/records/search:
+ *   get:
+ *     summary: Search records by category or notes (every role)
+ *     tags: [Records]
+ *     parameters:
+ *       - in: query
+ *         name: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: salary
+ *     responses:
+ *       200:
+ *         description: Search results fetched successfully
+ */
+
+
+/**
+ * @swagger
+ * /api/records/restore/{id}:
+ *   put:
+ *     summary: Restore a soft-deleted record (Admin only)
+ *     tags: [Records]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 69d0f6bc075b695bf36e5a81
+ *     responses:
+ *       200:
+ *         description: Record restored successfully
  */
 
 
@@ -170,19 +248,16 @@
  *   delete:
  *     summary: Soft delete record (Admin only)
  *     tags: [Records]
- *     security:
- *       - bearerAuth: []
- */
-
-
-/**
- * @swagger
- * /api/records/restore/{id}:
- *   put:
- *     summary: Restore deleted record (Admin only)
- *     tags: [Records]
- *     security:
- *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 69d0f6bc075b695bf36e5a81
+ *     responses:
+ *       200:
+ *         description: Record deleted successfully
  */
 
 
@@ -192,8 +267,9 @@
  *   get:
  *     summary: Get overall financial summary (Admin & Analyst)
  *     tags: [Summary]
- *     security:
- *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Returns total income, expense, and balance
  */
 
 
@@ -203,8 +279,9 @@
  *   get:
  *     summary: Get category-wise summary (Admin & Analyst)
  *     tags: [Summary]
- *     security:
- *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Returns totals grouped by category
  */
 
 
@@ -214,8 +291,15 @@
  *   get:
  *     summary: Get monthly trends (Admin & Analyst)
  *     tags: [Summary]
- *     security:
- *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         example: 2026
+ *     responses:
+ *       200:
+ *         description: Returns monthly income and expense trends
  */
 
 
@@ -225,8 +309,15 @@
  *   get:
  *     summary: Get recent activity (All roles)
  *     tags: [Summary]
- *     security:
- *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         example: 5
+ *     responses:
+ *       200:
+ *         description: Returns latest transactions
  */
 
 
@@ -236,8 +327,19 @@
  *   get:
  *     summary: Get all users (Admin only)
  *     tags: [Users]
- *     security:
- *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all users
+ *         content:
+ *           application/json:
+ *             example:
+ *               count: 2
+ *               data:
+ *                 - _id: "69d0f6bc075b695bf36e5a81"
+ *                   name: "Lakshmi"
+ *                   email: "admin@gmail.com"
+ *                   role: "admin"
+ *                   isActive: true
  */
 
 
@@ -245,8 +347,26 @@
  * @swagger
  * /api/users/{id}/status:
  *   put:
- *     summary: Toggle user active/inactive (Admin only)
+ *     summary: Toggle user active/inactive status (Admin only)
  *     tags: [Users]
- *     security:
- *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 69d0f6bc075b695bf36e5a81
+ *     responses:
+ *       200:
+ *         description: User status updated
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "User is now inactive"
+ *               data:
+ *                 _id: "69d0f6bc075b695bf36e5a81"
+ *                 name: "Lakshmi"
+ *                 email: "admin@gmail.com"
+ *                 role: "admin"
+ *                 isActive: false
  */

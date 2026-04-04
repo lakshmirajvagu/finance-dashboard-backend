@@ -66,7 +66,7 @@ router.put(
 router.get(
   "/search",
   authMiddleware,
-  roleMiddleware("admin", "analyst"),
+  roleMiddleware("viewer","admin", "analyst"),
   searchRecords
 );
 
