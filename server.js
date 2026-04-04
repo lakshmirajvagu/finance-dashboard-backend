@@ -6,6 +6,8 @@ const authRoutes = require("./routes/authRoutes.js");
 const recordRoutes = require("./routes/recordRoutes.js");
 const summaryRoutes = require("./routes/summaryRoutes.js");
 const userRoutes = require("./routes/userRoutes.js");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
 
 connectDB;
 dotenv.config();
@@ -22,6 +24,8 @@ app.use("/api/records", recordRoutes);
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Start Server
 const PORT = process.env.PORT || 5000;
