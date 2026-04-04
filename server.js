@@ -5,6 +5,7 @@ const connectDB = require("./config/db.js");
 const authRoutes = require("./routes/authRoutes.js");
 const recordRoutes = require("./routes/recordRoutes.js");
 const summaryRoutes = require("./routes/summaryRoutes.js");
+const userRoutes = require("./routes/userRoutes.js");
 
 connectDB;
 dotenv.config();
@@ -15,7 +16,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.use("/api/auth", authRoutes);
-// Test Route
+app.use("/api/users", userRoutes);
 app.use("/api/summary", summaryRoutes);
 app.use("/api/records", recordRoutes);
 app.get("/", (req, res) => {

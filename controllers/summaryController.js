@@ -69,3 +69,22 @@ exports.getMonthlySummary = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+exports.getRecentActivity = async (req, res) => {
+  try {
+    let { limit = 5 } = req.query;
+
+    limit = parseInt(limit);
+
+    const records = await Record.find({ isDeleted: false })
+      .sort({ createdAt: -1 }) // latest first
+      .limit(limit);
+
+    res.json({
+      count: records.length,
+      data: records
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

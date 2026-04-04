@@ -2,7 +2,8 @@ const express = require("express");
 const {
   getSummary,
   getCategorySummary,
-  getMonthlySummary
+  getMonthlySummary,
+  getRecentActivity
 } = require("../controllers/summaryController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -18,6 +19,12 @@ router.get(
   getSummary
 );
 
+router.get(
+  "/recent",
+  authMiddleware,
+  roleMiddleware("viewer", "admin", "analyst"),
+  getRecentActivity
+);
 router.get(
   "/category",
   authMiddleware,
